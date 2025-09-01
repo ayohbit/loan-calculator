@@ -4,7 +4,6 @@ $(document).ready(function() {
     const calcularBtn = $('#calcular-btn');
     const limparBtn = $('#limpar-btn');
     const resultsSection = $('#results-section');
-    const resultsTable = $('#results-table');
     const resultsTableBody = $('#results-tbody');
     const loading = $('#loading');
     const errorAlert = $('#error-alert');
@@ -16,10 +15,10 @@ $(document).ready(function() {
     const primeiroPagamento = $('#primeiro-pagamento');
     const valorEmprestimo = $('#valor-emprestimo');
     const taxaJuros = $('#taxa-juros');
+    const quantidadeParcelas = $('#quantidade-parcelas');
 
-    // Validação em tempo real
-    const campos = [dataInicial, dataFinal, primeiroPagamento, valorEmprestimo, taxaJuros];
-    
+    const campos = [dataInicial, dataFinal, primeiroPagamento, valorEmprestimo, taxaJuros, quantidadeParcelas];
+
     campos.forEach(campo => {
         campo.on('input change', function() {
             validateField($(this));
@@ -27,12 +26,10 @@ $(document).ready(function() {
         });
     });
 
-    // Validação específica para datas
     dataInicial.on('change', validateDates);
     dataFinal.on('change', validateDates);
     primeiroPagamento.on('change', validateDates);
 
-    // Submit do formulário
     form.on('submit', function(e) {
         e.preventDefault();
         if (validateForm()) {
@@ -40,37 +37,31 @@ $(document).ready(function() {
         }
     });
 
-    // Limpar formulário
     limparBtn.on('click', function() {
         clearForm();
     });
 
-    // Fechar alertas
     $('.alert-close').on('click', function() {
         $(this).parent().hide();
     });
 
-    // Funções de validação
+    // Validação de campos
     function validateField(field) {
         const fieldName = field.attr('name');
         const value = field.val();
         const errorElement = $(`#error-${field.attr('id')}`);
-        
+
         let isValid = true;
         let errorMessage = '';
 
-        // Validação de campo obrigatório
         if (!value || value.trim() === '') {
             isValid = false;
             errorMessage = 'Este campo é obrigatório';
-        }
-        // Validação de valores numéricos
-        else if ((fieldName === 'valorEmprestimo' || fieldName === 'taxaJuros') && parseFloat(value) <= 0) {
+        } else if ((fieldName === 'valorEmprestimo' || fieldName === 'taxaJuros') && parseFloat(value) <= 0) {
             isValid = false;
             errorMessage = 'O valor deve ser maior que zero';
         }
 
-        // Atualizar UI
         if (isValid) {
             field.removeClass('invalid').addClass('valid');
             errorElement.text('');
@@ -82,25 +73,32 @@ $(document).ready(function() {
         return isValid;
     }
 
+    // Função para parsear datas do input sem deslocamento
+    function parseDateInput(value) {
+        if (!value) return null;
+        const [ano, mes, dia] = value.split('-').map(Number);
+        return new Date(ano, mes - 1, dia); // evita problema de fuso UTC
+    }
+
     function validateDates() {
-        const dataInicialVal = new Date(dataInicial.val());
-        const dataFinalVal = new Date(dataFinal.val());
-        const primeiroPagamentoVal = new Date(primeiroPagamento.val());
+        const dataInicialVal = parseDateInput(dataInicial.val());
+        const dataFinalVal = parseDateInput(dataFinal.val());
+        const primeiroPagamentoVal = parseDateInput(primeiroPagamento.val());
 
         let isValid = true;
 
-        // Validar data final > data inicial
-        if (dataInicial.val() && dataFinal.val() && dataFinalVal <= dataInicialVal) {
-            $('#error-data-final').text('A data final deve ser maior que a data inicial');
-            dataFinal.removeClass('valid').addClass('invalid');
-            isValid = false;
-        } else if (dataFinal.val()) {
-            $('#error-data-final').text('');
-            dataFinal.removeClass('invalid').addClass('valid');
+        if (dataInicialVal && dataFinalVal) {
+            if (dataFinalVal <= dataInicialVal) {
+                $('#error-data-final').text('A data final deve ser maior que a data inicial');
+                dataFinal.removeClass('valid').addClass('invalid');
+                isValid = false;
+            } else {
+                $('#error-data-final').text('');
+                dataFinal.removeClass('invalid').addClass('valid');
+            }
         }
 
-        // Validar primeiro pagamento entre data inicial e final
-        if (dataInicial.val() && dataFinal.val() && primeiroPagamento.val()) {
+        if (dataInicialVal && dataFinalVal && primeiroPagamentoVal) {
             if (primeiroPagamentoVal <= dataInicialVal || primeiroPagamentoVal > dataFinalVal) {
                 $('#error-primeiro-pagamento').text('A data de primeiro pagamento deve estar entre a data inicial e a data final');
                 primeiroPagamento.removeClass('valid').addClass('invalid');
@@ -116,17 +114,10 @@ $(document).ready(function() {
 
     function validateForm() {
         let isValid = true;
-        
         campos.forEach(campo => {
-            if (!validateField(campo)) {
-                isValid = false;
-            }
+            if (!validateField(campo)) isValid = false;
         });
-
-        if (!validateDates()) {
-            isValid = false;
-        }
-
+        if (!validateDates()) isValid = false;
         return isValid;
     }
 
@@ -134,7 +125,6 @@ $(document).ready(function() {
         const allFieldsFilled = campos.every(campo => campo.val().trim() !== '');
         const allFieldsValid = campos.every(campo => !campo.hasClass('invalid'));
         const datesValid = validateDates();
-        
         calcularBtn.prop('disabled', !(allFieldsFilled && allFieldsValid && datesValid));
     }
 
@@ -148,7 +138,8 @@ $(document).ready(function() {
             dataFinal: dataFinal.val(),
             primeiroPagamento: primeiroPagamento.val(),
             valorEmprestimo: parseFloat(valorEmprestimo.val()),
-            taxaJuros: parseFloat(taxaJuros.val())
+            taxaJuros: parseFloat(taxaJuros.val()),
+            quantidadeParcelas: parseInt(quantidadeParcelas.val())
         };
 
         $.ajax({
@@ -158,7 +149,6 @@ $(document).ready(function() {
             data: JSON.stringify(requestData),
             success: function(response) {
                 hideLoading();
-                console.log('Response received:', response);
                 if (response.success && response.rows) {
                     displayResults(response.rows);
                     showSuccessAlert('Cálculo realizado com sucesso!');
@@ -168,9 +158,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 hideLoading();
-                console.error('AJAX Error:', xhr, status, error);
                 let errorMessage = 'Erro ao calcular empréstimo';
-                
                 try {
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
@@ -179,35 +167,29 @@ $(document).ready(function() {
                     } else {
                         errorMessage = `Erro ${xhr.status}: ${error}`;
                     }
-                } catch (e) {
-                    console.error('Error parsing response:', e);
-                }
-                
+                } catch (e) {}
                 showErrorAlert(errorMessage);
             }
         });
     }
 
-    // Função para exibir resultados
+    // Exibir resultados
     function displayResults(rows) {
         resultsTableBody.empty();
-        
+
         rows.forEach(row => {
             const tr = $('<tr>');
-            
-            // Formatar data - tratar tanto string quanto array de data
-            let dataFormatada;
-            if (Array.isArray(row.dataCompetencia)) {
-                // Se for array [ano, mês, dia]
-                const [ano, mes, dia] = row.dataCompetencia;
-                dataFormatada = new Date(ano, mes - 1, dia).toLocaleDateString('pt-BR');
-            } else if (typeof row.dataCompetencia === 'string') {
-                // Se for string ISO
-                dataFormatada = new Date(row.dataCompetencia).toLocaleDateString('pt-BR');
-            } else {
-                dataFormatada = 'Data inválida';
+
+            // Formatar data de competência corretamente
+            let dataFormatada = 'Data inválida';
+            if (row.dataCompetencia) {
+                const dateParts = row.dataCompetencia.split('-');
+                const ano = parseInt(dateParts[0], 10);
+                const mes = parseInt(dateParts[1], 10);
+                const dia = parseInt(dateParts[2], 10);
+                dataFormatada = `${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}`;
             }
-            
+
             tr.append(`<td>${dataFormatada}</td>`);
             tr.append(`<td>${formatCurrency(row.valorEmprestimo)}</td>`);
             tr.append(`<td>${formatCurrency(row.saldoDevedor)}</td>`);
@@ -218,75 +200,32 @@ $(document).ready(function() {
             tr.append(`<td>${formatCurrency(row.provisao)}</td>`);
             tr.append(`<td>${formatCurrency(row.jurosAcumulado)}</td>`);
             tr.append(`<td>${formatCurrency(row.pago)}</td>`);
-            
+
             resultsTableBody.append(tr);
         });
-        
-        resultsSection.show();
-        
-        // Scroll suave para os resultados
-        $('html, body').animate({
-            scrollTop: resultsSection.offset().top - 20
-        }, 500);
+
+        $('#results-section').show();
+        $('html, body').animate({ scrollTop: $('#results-section').offset().top - 20 }, 500);
     }
 
-    // Funções utilitárias
     function formatCurrency(value) {
-        if (value === null || value === undefined || value === 0) {
-            return 'R$ 0,00';
-        }
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(value);
+        if (!value) return 'R$ 0,00';
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     }
 
-    function showLoading() {
-        loading.show();
-        resultsSection.hide();
-    }
-
-    function hideLoading() {
-        loading.hide();
-    }
-
-    function showErrorAlert(message) {
-        errorAlert.find('.alert-message').text(message);
-        errorAlert.show();
-        
-        // Auto-hide após 5 segundos
-        setTimeout(() => {
-            errorAlert.hide();
-        }, 5000);
-    }
-
-    function showSuccessAlert(message) {
-        successAlert.find('.alert-message').text(message);
-        successAlert.show();
-        
-        // Auto-hide após 3 segundos
-        setTimeout(() => {
-            successAlert.hide();
-        }, 3000);
-    }
-
-    function hideAlerts() {
-        errorAlert.hide();
-        successAlert.hide();
-    }
+    function showLoading() { loading.show(); $('#results-section').hide(); }
+    function hideLoading() { loading.hide(); }
+    function showErrorAlert(msg) { errorAlert.find('.alert-message').text(msg); errorAlert.show(); setTimeout(()=>errorAlert.hide(),5000); }
+    function showSuccessAlert(msg) { successAlert.find('.alert-message').text(msg); successAlert.show(); setTimeout(()=>successAlert.hide(),3000); }
+    function hideAlerts() { errorAlert.hide(); successAlert.hide(); }
 
     function clearForm() {
         form[0].reset();
-        campos.forEach(campo => {
-            campo.removeClass('valid invalid');
-            $(`#error-${campo.attr('id')}`).text('');
-        });
-        resultsSection.hide();
+        campos.forEach(campo => { campo.removeClass('valid invalid'); $(`#error-${campo.attr('id')}`).text(''); });
+        $('#results-section').hide();
         hideAlerts();
         checkFormValidity();
     }
 
-    // Inicialização
     checkFormValidity();
 });
-

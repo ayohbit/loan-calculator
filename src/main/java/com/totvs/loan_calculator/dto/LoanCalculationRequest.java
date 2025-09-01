@@ -8,17 +8,22 @@ public class LoanCalculationRequest {
     private LocalDate primeiroPagamento;
     private Double valorEmprestimo;
     private Double taxaJuros;
+    private Integer quantidadeParcelas;
+    
+    // Constante para base de dias (sempre 360)
+    public static final int BASE_DIAS = 360;
 
     // Constructors
     public LoanCalculationRequest() {}
 
     public LoanCalculationRequest(LocalDate dataInicial, LocalDate dataFinal, LocalDate primeiroPagamento, 
-                                 Double valorEmprestimo, Double taxaJuros) {
+                                 Double valorEmprestimo, Double taxaJuros, Integer quantidadeParcelas) {
         this.dataInicial = dataInicial;
         this.dataFinal = dataFinal;
         this.primeiroPagamento = primeiroPagamento;
         this.valorEmprestimo = valorEmprestimo;
         this.taxaJuros = taxaJuros;
+        this.quantidadeParcelas = quantidadeParcelas;
     }
 
     // Getters and Setters
@@ -60,6 +65,18 @@ public class LoanCalculationRequest {
 
     public void setTaxaJuros(Double taxaJuros) {
         this.taxaJuros = taxaJuros;
+    }
+    
+    public Integer getQuantidadeParcelas() {
+        return quantidadeParcelas;
+    }
+    
+    public void setQuantidadeParcelas(Integer quantidadeParcelas) {
+        this.quantidadeParcelas = quantidadeParcelas;
+    }
+    
+    public int getBaseDias() {
+        return BASE_DIAS;
     }
 }
 

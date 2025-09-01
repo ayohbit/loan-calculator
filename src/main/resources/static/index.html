@@ -48,6 +48,20 @@
                             <input type="number" id="taxa-juros" name="taxaJuros" step="0.01" min="0" required>
                             <span class="error-message" id="error-taxa-juros"></span>
                         </div>
+
+                        <div class="form-group">
+                            <label for="quantidade-parcelas">Quantidade de Parcelas <span class="required">*</span></label>
+                            <input type="number" id="quantidade-parcelas" name="quantidadeParcelas" min="1" required>
+                            <span class="error-message" id="error-quantidade-parcelas"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="base-dias">Base de Dias</label>
+                            <input type="number" id="base-dias" name="baseDias" value="360" readonly disabled>
+                            <small class="field-note">Valor fixo de 360 dias</small>
+                        </div>
                     </div>
 
                     <div class="form-actions">
