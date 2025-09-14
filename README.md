@@ -49,14 +49,14 @@ Aplicação web desenvolvida em Spring Boot com frontend jQuery/HTML/CSS para c�
    ```bash
    ./mvnw spring-boot:run
    ```
-   
    Ou no Windows:
    ```bash
    mvnw.cmd spring-boot:run
    ```
 
 3. **Acesse a aplicação**
-   - Abra o navegador em: `http://localhost:8080`
+4. 
+    - Abra o navegador em: `http://localhost:8080`
 
 ### Endpoints da API
 
@@ -79,3 +79,4 @@ Aplicação web desenvolvida em Spring Boot com frontend jQuery/HTML/CSS para c�
 - Gráficos de evolução do empréstimo
 - Múltiplos cenários de cálculo
 - Autenticação e autorização
+
